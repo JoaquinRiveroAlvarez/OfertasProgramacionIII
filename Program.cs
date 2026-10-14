@@ -9,8 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configuración de Base de Datos MySQL con Pomelo Entity Framework Core
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-// Usamos versión fija para evitar que falle al iniciar si MySQL local aún no fue encendido
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -25,10 +23,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 // 2. Inyección de Dependencias por Capas y Funcionalidad
-// Repositorios
 builder.Services.AddScoped<IPromocionRepository, PromocionRepository>();
-
-// Servicios
 builder.Services.AddScoped<IPromocionService, PromocionService>();
 
 // 3. Controladores y Swagger / OpenAPI
@@ -40,11 +35,11 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "API Centralizador Inteligente de Descuentos",
         Version = "v1",
-        Description = "Backend en C# .NET y MySQL para agregación y recomendación de cupones de comida rápida (McDonald's, Burger King, Mostaza)."
+        Description = "Backend en C# .NET y MySQL para agregación y recomendación de cupones de comida rápida."
     });
 });
 
-// 4. CORS para permitir conexión fluida con el frontend React
+// 4. CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -57,8 +52,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Pipeline de ejecución HTTP
-// Habilitar Swagger siempre en Development y como página de inicio
+// 5. Configurar Swagger en /swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -66,12 +60,16 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// Redirigir la raíz "/" a "/swagger" para que al abrir https://localhost:7069 o http://localhost:5273 se vea la API de inmediato
-app.MapGet("/", () => Results.Redirect("/swagger"));
+// 6. Servir el Frontend React (Archivos estáticos desde wwwroot)
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+// Si se navega a cualquier ruta que no sea un endpoint de API (/api/*), sirve el frontend React index.html
+app.MapFallbackToFile("index.html");
 
 app.Run();
