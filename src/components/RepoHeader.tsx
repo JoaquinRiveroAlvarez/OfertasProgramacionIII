@@ -24,8 +24,8 @@ interface RepoHeaderProps {
   onOpenCreateIssue: () => void;
   onOpenTokenModal: () => void;
   onOpenCliGuide: () => void;
-  activeTab: 'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits';
-  setActiveTab: (tab: 'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits') => void;
+  activeTab: 'preview-feed' | 'preview-api' | 'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits';
+  setActiveTab: (tab: 'preview-feed' | 'preview-api' | 'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits') => void;
   isEmptyRepo: boolean;
 }
 
@@ -176,15 +176,39 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-1.5 mt-6 pt-4 border-t border-slate-800/80">
           <button
-            onClick={() => setActiveTab('mvp-issues')}
+            onClick={() => setActiveTab('preview-feed')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'preview-feed'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400/50'
+                : 'text-emerald-300 hover:text-white hover:bg-slate-800/80 bg-emerald-950/30 border border-emerald-500/30'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span>📱 Vista Previa: Feed Descuentos</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('preview-api')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              activeTab === 'mvp-issues'
+              activeTab === 'preview-api'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'text-indigo-300 hover:text-white hover:bg-slate-800/80 bg-indigo-950/30 border border-indigo-500/20'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Issues del MVP (9)</span>
+            <Terminal className="w-4 h-4 text-indigo-400" />
+            <span>💻 Vista Previa: Swagger / API</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('mvp-issues')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              activeTab === 'mvp-issues'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+            }`}
+          >
+            <CircleDot className="w-4 h-4 text-amber-400" />
+            <span>📋 Issues en GitHub (9)</span>
           </button>
 
           <button
@@ -195,29 +219,8 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
             }`}
           >
-            <FolderGit2 className="w-4 h-4 text-emerald-400" />
-            <span>Solución C# + MySQL + React</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('issues')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'issues'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <CircleDot className="w-4 h-4" />
-            <span>Issues en GitHub</span>
-            <span
-              className={`px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'issues'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-slate-800 text-slate-300'
-              }`}
-            >
-              {issuesCount}
-            </span>
+            <FolderGit2 className="w-4 h-4 text-indigo-400" />
+            <span>🛠️ Solución C# + MySQL</span>
           </button>
 
           <button
@@ -229,7 +232,7 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
             }`}
           >
             <UploadCloud className="w-4 h-4" />
-            <span>Subir Código / Sincronizar</span>
+            <span>Subir Código / Commit</span>
           </button>
 
           <button

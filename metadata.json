@@ -2,5 +2,7 @@
   "name": "GitHub Sync & Issues Manager",
   "description": "Conexión con GitHub para gestionar issues y sincronizar código en el repositorio ProgramacionIII.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

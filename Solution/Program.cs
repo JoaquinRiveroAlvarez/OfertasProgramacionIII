@@ -9,9 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configuración de Base de Datos MySQL con Pomelo Entity Framework Core
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Usamos versión fija para evitar que falle al iniciar si MySQL local aún no fue encendido
+var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    var serverVersion = ServerVersion.AutoDetect(connectionString);
     options.UseMySql(connectionString, serverVersion, mySqlOptions =>
     {
         mySqlOptions.EnableRetryOnFailure(
@@ -37,7 +40,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "API Centralizador Inteligente de Descuentos",
         Version = "v1",
-        Description = "Backend en C# .NET y MySQL para agregación y recomendación de cupones de comida rápida."
+        Description = "Backend en C# .NET y MySQL para agregación y recomendación de cupones de comida rápida (McDonald's, Burger King, Mostaza)."
     });
 });
 
@@ -55,11 +58,16 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Pipeline de ejecución HTTP
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger siempre en Development y como página de inicio
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Centralizador API v1");
+    c.RoutePrefix = "swagger";
+});
+
+// Redirigir la raíz "/" a "/swagger" para que al abrir https://localhost:7069 o http://localhost:5273 se vea la API de inmediato
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();

@@ -10,6 +10,8 @@ import { TokenModal } from './components/TokenModal';
 import { CliGuideModal } from './components/CliGuideModal';
 import { MvpIssuesManager } from './components/MvpIssuesManager';
 import { SolutionExplorer } from './components/SolutionExplorer';
+import { MvpLivePreview } from './components/MvpLivePreview';
+import { SwaggerLivePreview } from './components/SwaggerLivePreview';
 import {
   getRepository,
   getIssues,
@@ -39,7 +41,7 @@ export default function App() {
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [commits, setCommits] = useState<GitHubCommit[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits'>('mvp-issues');
+  const [activeTab, setActiveTab] = useState<'preview-feed' | 'preview-api' | 'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits'>('preview-feed');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -196,6 +198,14 @@ export default function App() {
         />
 
         {/* Tab Content */}
+        {activeTab === 'preview-feed' && (
+          <MvpLivePreview />
+        )}
+
+        {activeTab === 'preview-api' && (
+          <SwaggerLivePreview />
+        )}
+
         {activeTab === 'mvp-issues' && (
           <MvpIssuesManager
             repoOwner={repoOwner}
