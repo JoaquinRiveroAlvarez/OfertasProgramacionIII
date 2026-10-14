@@ -16,6 +16,8 @@ import { GitHubRepo } from '../types/github';
 
 interface RepoHeaderProps {
   repo: GitHubRepo | null;
+  repoOwner: string;
+  repoName: string;
   issuesCount: number;
   commitsCount: number;
   hasToken: boolean;
@@ -29,6 +31,8 @@ interface RepoHeaderProps {
 
 export const RepoHeader: React.FC<RepoHeaderProps> = ({
   repo,
+  repoOwner,
+  repoName,
   issuesCount,
   commitsCount,
   hasToken,
@@ -40,7 +44,7 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
   isEmptyRepo,
 }) => {
   const [copiedClone, setCopiedClone] = useState(false);
-  const cloneUrl = 'https://github.com/JoaquinRiveroAlvarez/ProgramacionIII.git';
+  const cloneUrl = `https://github.com/${repoOwner}/${repoName}.git`;
 
   const handleCopyClone = () => {
     navigator.clipboard.writeText(cloneUrl);
@@ -102,12 +106,12 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
 
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                <span>JoaquinRiveroAlvarez</span>
+                <span>{repoOwner}</span>
                 <span className="text-slate-600">/</span>
-                <span className="text-indigo-400">ProgramacionIII</span>
+                <span className="text-indigo-400">{repoName}</span>
               </h1>
               <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                Espacio de desarrollo, gestión de issues, trabajos prácticos y sincronización de código para la materia Programación III.
+                Espacio de desarrollo, gestión de issues, trabajos prácticos y sincronización de código para {repoName}.
               </p>
             </div>
 
@@ -157,7 +161,7 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
               </button>
 
               <a
-                href="https://github.com/JoaquinRiveroAlvarez/ProgramacionIII/issues"
+                href={`https://github.com/${repoOwner}/${repoName}/issues`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center p-2 bg-slate-800/90 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700 rounded-xl transition-colors"

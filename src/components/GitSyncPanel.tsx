@@ -17,6 +17,8 @@ import { createOrUpdateFile, getCommits } from '../services/githubApi';
 import { GitHubCommit } from '../types/github';
 
 interface GitSyncPanelProps {
+  repoOwner: string;
+  repoName: string;
   token: string;
   commits: GitHubCommit[];
   onCommitSuccess: () => void;
@@ -79,6 +81,8 @@ Thumbs.db
 `;
 
 export const GitSyncPanel: React.FC<GitSyncPanelProps> = ({
+  repoOwner,
+  repoName,
   token,
   commits,
   onCommitSuccess,
@@ -103,18 +107,18 @@ export const GitSyncPanel: React.FC<GitSyncPanelProps> = ({
     try {
       // 1. Commit README.md
       const resReadme = await createOrUpdateFile(
-        'JoaquinRiveroAlvarez',
-        'ProgramacionIII',
+        repoOwner,
+        repoName,
         token,
         'README.md',
-        'chore: inicializar repositorio con README.md base para Programacion III',
+        `chore: inicializar repositorio con README.md base para ${repoName}`,
         STARTER_README
       );
 
       // 2. Commit .gitignore
       await createOrUpdateFile(
-        'JoaquinRiveroAlvarez',
-        'ProgramacionIII',
+        repoOwner,
+        repoName,
         token,
         '.gitignore',
         'chore: agregar .gitignore estándar para proyectos académicos',
@@ -160,8 +164,8 @@ export const GitSyncPanel: React.FC<GitSyncPanelProps> = ({
 
     try {
       const res = await createOrUpdateFile(
-        'JoaquinRiveroAlvarez',
-        'ProgramacionIII',
+        repoOwner,
+        repoName,
         token,
         filePath.trim(),
         commitMessage.trim(),

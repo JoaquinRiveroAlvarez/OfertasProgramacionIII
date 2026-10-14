@@ -20,6 +20,8 @@ import { createIssue } from '../services/githubApi';
 import { GitHubIssue, IssueTemplate } from '../types/github';
 
 interface CreateIssueModalProps {
+  repoOwner: string;
+  repoName: string;
   isOpen: boolean;
   onClose: () => void;
   token: string;
@@ -39,6 +41,8 @@ const AVAILABLE_LABELS = [
 ];
 
 export const CreateIssueModal: React.FC<CreateIssueModalProps> = ({
+  repoOwner,
+  repoName,
   isOpen,
   onClose,
   token,
@@ -101,7 +105,7 @@ export const CreateIssueModal: React.FC<CreateIssueModalProps> = ({
     setError(null);
 
     try {
-      const created = await createIssue('JoaquinRiveroAlvarez', 'ProgramacionIII', token, {
+      const created = await createIssue(repoOwner, repoName, token, {
         title: title.trim(),
         body: body.trim(),
         labels: selectedLabels,
@@ -131,7 +135,7 @@ export const CreateIssueModal: React.FC<CreateIssueModalProps> = ({
             <div>
               <h2 className="text-base font-semibold text-white">Nueva Issue en GitHub</h2>
               <p className="text-xs text-slate-400">
-                Repositorio: <span className="text-indigo-400 font-mono">JoaquinRiveroAlvarez/ProgramacionIII</span>
+                Repositorio: <span className="text-indigo-400 font-mono">{repoOwner}/{repoName}</span>
               </p>
             </div>
           </div>

@@ -17,17 +17,23 @@ import {
   verifyGitHubToken
 } from './services/githubApi';
 import { GitHubRepo, GitHubIssue, GitHubCommit, GitHubUser } from './types/github';
-import { AlertCircle, RefreshCw, KeyRound, CheckCircle2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
-const REPO_OWNER = 'JoaquinRiveroAlvarez';
-const REPO_NAME = 'ProgramacionIII';
+const DEFAULT_OWNER = 'JoaquinRiveroAlvarez';
+const DEFAULT_REPO = 'OfertasProgramacionIII';
 const TOKEN_STORAGE_KEY = 'gh_token_prog3';
+const REPO_STORAGE_KEY = 'gh_active_repo_prog3';
 
 export default function App() {
   const [token, setToken] = useState<string>(() => {
     return localStorage.getItem(TOKEN_STORAGE_KEY) || '';
   });
   const [currentUser, setCurrentUser] = useState<GitHubUser | null>(null);
+
+  const [repoOwner] = useState<string>(DEFAULT_OWNER);
+  const [repoName, setRepoName] = useState<string>(() => {
+    return localStorage.getItem(REPO_STORAGE_KEY) || DEFAULT_REPO;
+  });
 
   const [repo, setRepo] = useState<GitHubRepo | null>(null);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
@@ -55,24 +61,24 @@ export default function App() {
     }
   }, [token]);
 
-  const loadData = useCallback(async (authToken: string) => {
+  const loadData = useCallback(async (authToken: string, targetRepo: string) => {
     setIsRefreshing(true);
     setFetchError(null);
 
     try {
       // 1. Fetch Repository details
-      const repoData = await getRepository(REPO_OWNER, REPO_NAME, authToken);
+      const repoData = await getRepository(DEFAULT_OWNER, targetRepo, authToken);
       setRepo(repoData);
 
       // 2. Fetch Issues
-      const issuesData = await getIssues(REPO_OWNER, REPO_NAME, authToken, 'all');
+      const issuesData = await getIssues(DEFAULT_OWNER, targetRepo, authToken, 'all');
       setIssues(issuesData);
 
       // 3. Fetch Commits
-      const commitsData = await getCommits(REPO_OWNER, REPO_NAME, authToken);
+      const commitsData = await getCommits(DEFAULT_OWNER, targetRepo, authToken);
       setCommits(commitsData);
     } catch (err: unknown) {
-      setFetchError(err instanceof Error ? err.message : 'Error al cargar datos del repositorio');
+      setFetchError(err instanceof Error ? err.message : `Error al consultar repositorio ${DEFAULT_OWNER}/${targetRepo}`);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -80,8 +86,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadData(token);
-  }, [loadData, token]);
+    loadData(token, repoName);
+  }, [loadData, token, repoName]);
+
+  const handleChangeRepo = (newRepo: string) => {
+    const clean = newRepo.trim();
+    if (!clean) return;
+    setRepoName(clean);
+    localStorage.setItem(REPO_STORAGE_KEY, clean);
+    loadData(token, clean);
+  };
 
   const handleSaveToken = (newToken: string, user: GitHubUser | null) => {
     setToken(newToken);
@@ -91,13 +105,19 @@ export default function App() {
     } else {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
     }
-    loadData(newToken);
+    loadData(newToken, repoName);
   };
 
   const handleIssueCreated = (newIssue: GitHubIssue) => {
-    setIssues((prev) => [newIssue, ...prev]);
-    // Also update repo issues count
-    if (repo) {
+    setIssues((prev) => {
+      const exists = prev.some((i) => i.id === newIssue.id || i.number === newIssue.number);
+      if (exists) {
+        return prev.map((i) => (i.id === newIssue.id || i.number === newIssue.number ? newIssue : i));
+      }
+      return [newIssue, ...prev];
+    });
+
+    if (repo && newIssue.state === 'open') {
       setRepo({
         ...repo,
         open_issues_count: repo.open_issues_count + 1,
@@ -121,7 +141,7 @@ export default function App() {
   };
 
   const handleCommitSuccess = () => {
-    loadData(token);
+    loadData(token, repoName);
   };
 
   const isEmptyRepo = repo ? commits.length === 0 : false;
@@ -131,10 +151,13 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         repo={repo}
+        repoOwner={repoOwner}
+        repoName={repoName}
+        onChangeRepo={handleChangeRepo}
         user={currentUser}
         hasToken={Boolean(token)}
         onOpenTokenModal={() => setIsTokenModalOpen(true)}
-        onRefresh={() => loadData(token)}
+        onRefresh={() => loadData(token, repoName)}
         isRefreshing={isRefreshing}
       />
 
@@ -148,7 +171,7 @@ export default function App() {
               <span>{fetchError}</span>
             </div>
             <button
-              onClick={() => loadData(token)}
+              onClick={() => loadData(token, repoName)}
               className="px-3 py-1 bg-rose-900/60 hover:bg-rose-800 text-white rounded-lg text-xs font-medium transition-colors"
             >
               Reintentar
@@ -159,6 +182,8 @@ export default function App() {
         {/* Global Repository Banner Header */}
         <RepoHeader
           repo={repo}
+          repoOwner={repoOwner}
+          repoName={repoName}
           issuesCount={issues.length}
           commitsCount={commits.length}
           hasToken={Boolean(token)}
@@ -173,16 +198,21 @@ export default function App() {
         {/* Tab Content */}
         {activeTab === 'mvp-issues' && (
           <MvpIssuesManager
+            repoOwner={repoOwner}
+            repoName={repoName}
             token={token}
             onOpenTokenModal={() => setIsTokenModalOpen(true)}
             onIssuePublished={handleIssueCreated}
             onBatchPublished={handleBatchCreated}
             existingIssues={issues}
+            onRefreshRepo={() => loadData(token, repoName)}
           />
         )}
 
         {activeTab === 'solution' && (
           <SolutionExplorer
+            repoOwner={repoOwner}
+            repoName={repoName}
             token={token}
             onOpenTokenModal={() => setIsTokenModalOpen(true)}
             onSolutionCommitted={handleCommitSuccess}
@@ -191,6 +221,8 @@ export default function App() {
 
         {activeTab === 'issues' && (
           <IssuesList
+            repoOwner={repoOwner}
+            repoName={repoName}
             issues={issues}
             isLoading={isLoading}
             onSelectIssue={(issue) => setSelectedIssue(issue)}
@@ -203,6 +235,8 @@ export default function App() {
 
         {activeTab === 'sync' && (
           <GitSyncPanel
+            repoOwner={repoOwner}
+            repoName={repoName}
             token={token}
             commits={commits}
             onCommitSuccess={handleCommitSuccess}
@@ -225,14 +259,14 @@ export default function App() {
       <footer className="border-t border-slate-800/80 bg-slate-900/40 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p>
-            Repositorio:{' '}
+            Repositorio activo:{' '}
             <a
-              href="https://github.com/JoaquinRiveroAlvarez/ProgramacionIII"
+              href={`https://github.com/${repoOwner}/${repoName}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-slate-400 hover:text-indigo-400 font-mono underline"
             >
-              JoaquinRiveroAlvarez/ProgramacionIII
+              {repoOwner}/{repoName}
             </a>
           </p>
           <p className="flex items-center gap-1.5">
@@ -252,6 +286,8 @@ export default function App() {
       />
 
       <CreateIssueModal
+        repoOwner={repoOwner}
+        repoName={repoName}
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         token={token}
@@ -263,6 +299,8 @@ export default function App() {
       />
 
       <IssueDetailModal
+        repoOwner={repoOwner}
+        repoName={repoName}
         issue={selectedIssue}
         isOpen={Boolean(selectedIssue)}
         onClose={() => setSelectedIssue(null)}

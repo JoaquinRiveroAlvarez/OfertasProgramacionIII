@@ -18,6 +18,8 @@ import {
 import { createOrUpdateFile } from '../services/githubApi';
 
 interface SolutionExplorerProps {
+  repoOwner: string;
+  repoName: string;
   token: string;
   onOpenTokenModal: () => void;
   onSolutionCommitted: () => void;
@@ -268,6 +270,8 @@ builder.Services.AddSwaggerGen();
 ];
 
 export const SolutionExplorer: React.FC<SolutionExplorerProps> = ({
+  repoOwner,
+  repoName,
   token,
   onOpenTokenModal,
   onSolutionCommitted,
@@ -305,8 +309,8 @@ export const SolutionExplorer: React.FC<SolutionExplorerProps> = ({
         setPushProgress({ current: i + 1, total: SOLUTION_FILES.length });
 
         await createOrUpdateFile(
-          'JoaquinRiveroAlvarez',
-          'ProgramacionIII',
+          repoOwner,
+          repoName,
           token,
           file.path,
           `feat: agregar ${file.path} (${file.techLayer} / ${file.functionality})`,
@@ -319,8 +323,8 @@ export const SolutionExplorer: React.FC<SolutionExplorerProps> = ({
 
       setPushResult({
         type: 'success',
-        text: `¡Solución completa en C# .NET + MySQL subida a GitHub! Se subieron ${SOLUTION_FILES.length} archivos a la rama main.`,
-        url: 'https://github.com/JoaquinRiveroAlvarez/ProgramacionIII',
+        text: `¡Solución completa en C# .NET + MySQL subida a GitHub! Se subieron ${SOLUTION_FILES.length} archivos a la rama main de ${repoOwner}/${repoName}.`,
+        url: `https://github.com/${repoOwner}/${repoName}`,
       });
 
       onSolutionCommitted();

@@ -20,6 +20,8 @@ import {
 } from '../services/githubApi';
 
 interface IssueDetailModalProps {
+  repoOwner: string;
+  repoName: string;
   issue: GitHubIssue | null;
   isOpen: boolean;
   onClose: () => void;
@@ -28,6 +30,8 @@ interface IssueDetailModalProps {
 }
 
 export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
+  repoOwner,
+  repoName,
   issue,
   isOpen,
   onClose,
@@ -54,7 +58,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
   const loadComments = async () => {
     setIsLoadingComments(true);
     try {
-      const data = await getIssueComments('JoaquinRiveroAlvarez', 'ProgramacionIII', token, issue.number);
+      const data = await getIssueComments(repoOwner, repoName, token, issue.number);
       setComments(data);
     } catch {
       // Ignore
@@ -76,8 +80,8 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
 
     try {
       const updated = await updateIssue(
-        'JoaquinRiveroAlvarez',
-        'ProgramacionIII',
+        repoOwner,
+        repoName,
         token,
         issue.number,
         { state: newState }
@@ -104,8 +108,8 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
 
     try {
       await addIssueComment(
-        'JoaquinRiveroAlvarez',
-        'ProgramacionIII',
+        repoOwner,
+        repoName,
         token,
         issue.number,
         newComment.trim()

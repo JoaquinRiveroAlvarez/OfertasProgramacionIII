@@ -17,6 +17,8 @@ import { PROGRAMACION_III_TEMPLATES } from '../data/issueTemplates';
 import { createIssue } from '../services/githubApi';
 
 interface IssuesListProps {
+  repoOwner: string;
+  repoName: string;
   issues: GitHubIssue[];
   isLoading: boolean;
   onSelectIssue: (issue: GitHubIssue) => void;
@@ -27,6 +29,8 @@ interface IssuesListProps {
 }
 
 export const IssuesList: React.FC<IssuesListProps> = ({
+  repoOwner,
+  repoName,
   issues,
   isLoading,
   onSelectIssue,
@@ -83,7 +87,7 @@ export const IssuesList: React.FC<IssuesListProps> = ({
       // Create TP1, TP2, and Setup Inicial
       const templatesToCreate = PROGRAMACION_III_TEMPLATES.slice(0, 3);
       for (const tpl of templatesToCreate) {
-        const res = await createIssue('JoaquinRiveroAlvarez', 'ProgramacionIII', token, {
+        const res = await createIssue(repoOwner, repoName, token, {
           title: tpl.defaultTitle,
           body: tpl.body,
           labels: tpl.labels,
@@ -200,7 +204,7 @@ export const IssuesList: React.FC<IssuesListProps> = ({
           <div className="max-w-md mx-auto">
             <h3 className="text-sm font-semibold text-white">
               {issues.length === 0
-                ? 'No hay issues creadas en ProgramacionIII'
+                ? `No hay issues creadas en ${repoName}`
                 : 'No se encontraron issues con los filtros actuales'}
             </h3>
             <p className="text-xs text-slate-400 mt-1">
