@@ -4,9 +4,10 @@ import {
   ExternalLink,
   CheckCircle2,
   RefreshCw,
-  GitBranch,
   ChevronDown,
-  FolderGit2
+  ChevronUp,
+  LayoutTemplate,
+  Tag
 } from 'lucide-react';
 import { GitHubRepo, GitHubUser } from '../types/github';
 
@@ -20,6 +21,8 @@ interface NavbarProps {
   onOpenTokenModal: () => void;
   onRefresh: () => void;
   isRefreshing: boolean;
+  isRepoCollapsed?: boolean;
+  onToggleCollapseRepo?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -32,6 +35,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenTokenModal,
   onRefresh,
   isRefreshing,
+  isRepoCollapsed = false,
+  onToggleCollapseRepo,
 }) => {
   const [showRepoSelector, setShowRepoSelector] = useState(false);
   const [customInput, setCustomInput] = useState('');
@@ -56,47 +61,42 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand & Repo Info with Switcher */}
+    <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        {/* Brand & App Title */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0">
-            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-              <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-            </svg>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0">
+            <Tag className="w-5 h-5 text-white" />
           </div>
 
-          <div className="relative">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-100 text-sm tracking-wide">
-                {repoOwner}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-white text-base tracking-tight flex items-center gap-1.5">
+                Cazador de Descuentos
               </span>
-              <span className="text-slate-500 text-xs">/</span>
-
-              {/* Repo Selector Dropdown trigger */}
-              <button
-                onClick={() => setShowRepoSelector(!showRepoSelector)}
-                className="flex items-center gap-1.5 font-bold text-white text-base hover:text-indigo-400 bg-slate-800/60 hover:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700/60 transition-all"
-                title="Cambiar repositorio"
-              >
-                <span>{repoName}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              <span className="text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full ml-1">
-                Público
+              <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Online & Delivery
               </span>
             </div>
 
-            <p className="text-xs text-slate-400 hidden sm:block">
-              Gestor de Issues y Sincronizador de Repositorio
-            </p>
+            {/* Repo info link / Switcher */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <span>Repo:</span>
+              <button
+                onClick={() => setShowRepoSelector(!showRepoSelector)}
+                className="font-mono text-slate-300 hover:text-indigo-400 flex items-center gap-1 transition-colors"
+                title="Cambiar repositorio activo"
+              >
+                <span>{repoOwner}/{repoName}</span>
+                <ChevronDown className="w-3 h-3 text-slate-500" />
+              </button>
+            </div>
 
-            {/* Dropdown Menu */}
+            {/* Dropdown Menu for repo switcher */}
             {showRepoSelector && (
-              <div className="absolute left-0 top-full mt-2 w-72 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-3 space-y-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute left-4 top-16 mt-1 w-72 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-3 space-y-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                  Tus Repositorios en GitHub:
+                  Repositorios en GitHub:
                 </p>
                 <div className="space-y-1">
                   {availableRepos.map((r) => (
@@ -138,8 +138,35 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
+        {/* Action Controls & Collapse/Expand Toggle */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Quick Collapse / Expand Repo Bar Button */}
+          {onToggleCollapseRepo && (
+            <button
+              onClick={onToggleCollapseRepo}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                isRepoCollapsed
+                  ? 'bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border-indigo-500/40'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+              }`}
+              title={
+                isRepoCollapsed
+                  ? 'Mostrar panel del repositorio GitHub y herramientas'
+                  : 'Contraer panel del repositorio para ver solo la app web'
+              }
+            >
+              <LayoutTemplate className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">
+                {isRepoCollapsed ? 'Mostrar Panel Repo' : 'Contraer Panel Repo'}
+              </span>
+              {isRepoCollapsed ? (
+                <ChevronDown className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronUp className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
+
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
@@ -153,9 +180,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             href={`https://github.com/${repoOwner}/${repoName}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-800 hover:text-white border border-slate-700 rounded-lg transition-all"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-800 hover:text-white border border-slate-700 rounded-lg transition-all"
           >
-            <span>Ver en GitHub</span>
+            <span>GitHub</span>
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           </a>
 
@@ -179,12 +206,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ) : (
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 )}
-                <span>Token Conectado ({user?.login || 'Activo'})</span>
+                <span className="hidden sm:inline">Token Conectado</span>
+                <span className="sm:hidden">Token OK</span>
               </>
             ) : (
               <>
                 <KeyRound className="w-4 h-4" />
-                <span>Conectar Token de GitHub</span>
+                <span className="hidden sm:inline">Conectar GitHub</span>
+                <span className="sm:hidden">GitHub</span>
               </>
             )}
           </button>

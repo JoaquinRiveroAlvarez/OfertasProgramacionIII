@@ -1,6 +1,6 @@
 {
-  "name": "GitHub Sync & Issues Manager",
-  "description": "Conexión con GitHub para gestionar issues y sincronizar código en el repositorio ProgramacionIII.",
+  "name": "Cazador de Descuentos",
+  "description": "Cazador de Descuentos - Buscador y catálogo de ofertas y cupones reales para compras online y delivery en Argentina (PedidosYa, Rappi, Betos Lomitos, KFC, Mostaza y más).",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

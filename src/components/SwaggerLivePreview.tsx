@@ -44,7 +44,7 @@ export const SwaggerLivePreview: React.FC = () => {
       id: 'post-ingesta',
       method: 'POST',
       path: '/api/Ingesta/trigger',
-      desc: 'Dispara el pipeline de extracción y estructuración con IA de McDonald’s, Burger King y Mostaza.',
+      desc: 'Dispara el pipeline de extracción y estructuración con IA de KFC, McDonald’s, Burger King, Mostaza, Wendy’s y Subway.',
     },
   ];
 
@@ -55,6 +55,21 @@ export const SwaggerLivePreview: React.FC = () => {
         JSON.stringify(
           [
             {
+              id: 101,
+              marcaId: 4,
+              marcaNombre: "KFC",
+              titulo: "Martes Locos: Bucket 8 Piezas de Pollo + 4 Papas",
+              precioOriginal: 19800.0,
+              precioPromocional: 13860.0,
+              porcentajeDescuento: 30,
+              codigoCupon: "KFC-MARTES30",
+              urlOrigen: "https://kfc.com.ar/",
+              seccionNombre: "KFC Argentina - Menú de Buckets & Martes Locos",
+              requiereApp: false,
+              semaforoValidez: "Verde",
+              restricciones: ["Aplica en sucursales de CABA, GBA, Rosario y Mendoza"]
+            },
+            {
               id: 1,
               marcaId: 1,
               marcaNombre: "McDonald's",
@@ -63,22 +78,11 @@ export const SwaggerLivePreview: React.FC = () => {
               precioPromocional: 7900.0,
               porcentajeDescuento: 37,
               codigoCupon: "MCD-CUARTO37",
+              urlOrigen: "https://www.mcdonalds.com.ar/apps",
+              seccionNombre: "McDonald's Argentina - Sección Apps & Cupones Oficiales",
               requiereApp: true,
               semaforoValidez: "Verde",
               restricciones: ["Exclusivo canje en App oficial", "Consumo en mostrador"]
-            },
-            {
-              id: 4,
-              marcaId: 1,
-              marcaNombre: "McDonald's",
-              titulo: "Sundae de Dulce de Leche o Chocolate Gratis",
-              precioOriginal: 4500.0,
-              precioPromocional: 0.0,
-              porcentajeDescuento: 100,
-              codigoCupon: "MCD-SUNDAE0",
-              requiereApp: true,
-              semaforoValidez: "Verde",
-              restricciones: ["Con la compra de combo mediano o grande"]
             }
           ],
           null,

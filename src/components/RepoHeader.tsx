@@ -10,7 +10,8 @@ import {
   CircleDot,
   Terminal,
   Sparkles,
-  Info
+  ChevronUp,
+  Tag
 } from 'lucide-react';
 import { GitHubRepo } from '../types/github';
 
@@ -27,6 +28,7 @@ interface RepoHeaderProps {
   activeTab: 'preview-feed' | 'preview-api' | 'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits';
   setActiveTab: (tab: 'preview-feed' | 'preview-api' | 'mvp-issues' | 'solution' | 'issues' | 'sync' | 'commits') => void;
   isEmptyRepo: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const RepoHeader: React.FC<RepoHeaderProps> = ({
@@ -42,6 +44,7 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
   activeTab,
   setActiveTab,
   isEmptyRepo,
+  onToggleCollapse,
 }) => {
   const [copiedClone, setCopiedClone] = useState(false);
   const cloneUrl = `https://github.com/${repoOwner}/${repoName}.git`;
@@ -64,10 +67,10 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-white">
-                  ¡Repositorio recién creado y listo para sincronizar!
+                  ¡Repositorio listo para sincronizar!
                 </h3>
                 <p className="text-xs text-slate-300 mt-0.5">
-                  El repositorio <span className="text-indigo-300 font-mono">ProgramacionIII</span> está listo. Podés crear las primeras issues y subir el código base inicial (README, .gitignore o archivos de la materia) con un solo clic.
+                  El repositorio <span className="text-indigo-300 font-mono">{repoName}</span> está conectado.
                 </p>
               </div>
             </div>
@@ -93,15 +96,27 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5">
                 <FolderGit2 className="w-3.5 h-3.5 text-indigo-400" />
-                Repositorio Oficial
+                Repositorio en GitHub
               </span>
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                 Público
               </span>
               <span className="text-xs text-slate-400 flex items-center gap-1">
                 <GitBranch className="w-3.5 h-3.5 text-slate-500" />
-                Branch por defecto: <strong className="text-slate-200 font-mono">main</strong>
+                Branch: <strong className="text-slate-200 font-mono">main</strong>
               </span>
+
+              {/* Collapse trigger right in the metadata row */}
+              {onToggleCollapse && (
+                <button
+                  onClick={onToggleCollapse}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-500/30 px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors ml-auto sm:ml-0"
+                  title="Ocultar este panel del repositorio para ver solo la app web"
+                >
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  <span>Contraer este panel</span>
+                </button>
+              )}
             </div>
 
             <div>
@@ -111,7 +126,7 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
                 <span className="text-indigo-400">{repoName}</span>
               </h1>
               <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                Espacio de desarrollo, gestión de issues, trabajos prácticos y sincronización de código para {repoName}.
+                Espacio de desarrollo, gestión de issues en GitHub y backend C# / MySQL para la app Cazador de Descuentos.
               </p>
             </div>
 
@@ -143,6 +158,16 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
 
           {/* Right Action Buttons */}
           <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
+            {onToggleCollapse && (
+              <button
+                onClick={onToggleCollapse}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition-all shadow-sm"
+              >
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+                <span>Ocultar Panel de Repositorio</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenCreateIssue}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50"
@@ -183,8 +208,8 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
                 : 'text-emerald-300 hover:text-white hover:bg-slate-800/80 bg-emerald-950/30 border border-emerald-500/30'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span>📱 Vista Previa: Feed Descuentos</span>
+            <Tag className="w-4 h-4 text-emerald-400" />
+            <span>🏷️ Cazador de Descuentos (App Online)</span>
           </button>
 
           <button
@@ -196,7 +221,7 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
             }`}
           >
             <Terminal className="w-4 h-4 text-indigo-400" />
-            <span>💻 Vista Previa: Swagger / API</span>
+            <span>💻 Swagger / API</span>
           </button>
 
           <button
@@ -208,7 +233,7 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
             }`}
           >
             <CircleDot className="w-4 h-4 text-amber-400" />
-            <span>📋 Issues en GitHub (9)</span>
+            <span>📋 Issues en GitHub ({issuesCount})</span>
           </button>
 
           <button

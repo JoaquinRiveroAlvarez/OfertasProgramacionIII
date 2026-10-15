@@ -4,61 +4,203 @@ import {
   Search,
   ExternalLink,
   Copy,
-  Check,
   ThumbsUp,
   ThumbsDown,
   AlertTriangle,
   Clock,
-  ShieldCheck,
-  Smartphone,
-  Sliders,
-  Filter,
   CheckCircle2,
   X,
-  Tag,
   Zap,
-  ArrowRight,
-  Info
+  CheckCheck,
+  Compass,
+  ArrowUpRight,
+  ShoppingCart,
+  Truck,
+  CreditCard,
+  Calendar,
+  MapPin,
+  Tag,
+  ShieldCheck,
+  Layers,
+  HelpCircle
 } from 'lucide-react';
-import { CATALOGO_DESCUENTOS_INICIAL, PromocionItem } from '../data/mockPromociones';
+import {
+  CATALOGO_DESCUENTOS_INICIAL,
+  PromocionItem,
+  MarcaNombre,
+  CategoriaPromo
+} from '../data/mockPromociones';
+
+// Helper for safe clipboard copying in iframes
+async function copyToClipboardSafe(text: string): Promise<boolean> {
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fallback for restricted iframe contexts
+  }
+
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return successful;
+  } catch {
+    return false;
+  }
+}
+
+// Brand Logo Component with robust fallback
+const BrandLogo: React.FC<{ marca: MarcaNombre; logoUrl: string; size?: string }> = ({
+  marca,
+  logoUrl,
+  size = 'w-8 h-8'
+}) => {
+  const [imgError, setImgError] = useState(false);
+
+  if (imgError || !logoUrl) {
+    if (marca === 'Betos Lomitos') {
+      return (
+        <div className={`${size} rounded-xl bg-amber-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 border border-amber-400/30`}>
+          BETOS
+        </div>
+      );
+    }
+    if (marca === 'PedidosYa') {
+      return (
+        <div className={`${size} rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 border border-red-400/30`}>
+          PEYA
+        </div>
+      );
+    }
+    if (marca === 'Rappi') {
+      return (
+        <div className={`${size} rounded-xl bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0 border border-orange-400/30`}>
+          RAPPI
+        </div>
+      );
+    }
+    if (marca === 'Lomiterías 2x1') {
+      return (
+        <div className={`${size} rounded-xl bg-yellow-600 flex items-center justify-center text-slate-950 font-black text-xs shadow-md shrink-0 border border-yellow-400/30`}>
+          2x1
+        </div>
+      );
+    }
+    if (marca === "McDonald's") {
+      return (
+        <div className={`${size} rounded-xl bg-red-600 flex items-center justify-center text-amber-300 font-black text-sm shadow-md shrink-0`}>
+          M
+        </div>
+      );
+    }
+    if (marca === 'Burger King') {
+      return (
+        <div className={`${size} rounded-xl bg-amber-500 flex items-center justify-center text-red-950 font-black text-xs shadow-md shrink-0`}>
+          BK
+        </div>
+      );
+    }
+    if (marca === 'KFC') {
+      return (
+        <div className={`${size} rounded-xl bg-red-700 flex items-center justify-center text-white font-black text-xs tracking-tighter shadow-md shrink-0 border border-red-500/40`}>
+          KFC
+        </div>
+      );
+    }
+    if (marca === "Wendy's") {
+      return (
+        <div className={`${size} rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0`}>
+          W
+        </div>
+      );
+    }
+    if (marca === 'Subway') {
+      return (
+        <div className={`${size} rounded-xl bg-emerald-600 flex items-center justify-center text-amber-300 font-black text-xs shadow-md shrink-0`}>
+          SUB
+        </div>
+      );
+    }
+    return (
+      <div className={`${size} rounded-xl bg-rose-700 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0`}>
+        M
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={logoUrl}
+      alt={marca}
+      onError={() => setImgError(true)}
+      className={`${size} object-contain rounded-lg shrink-0`}
+    />
+  );
+};
 
 export const MvpLivePreview: React.FC = () => {
   const [promos, setPromos] = useState<PromocionItem[]>(CATALOGO_DESCUENTOS_INICIAL);
   const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+  const [selectedBenefit, setSelectedBenefit] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState('');
-  const [onlyNoApp, setOnlyNoApp] = useState(false);
-  const [userPreferences, setUserPreferences] = useState<string[]>(['Hamburguesas']);
-  const [isPrefModalOpen, setIsPrefModalOpen] = useState(false);
 
-  // Selected promo for detail modal
+  // Selected promo for full conditions modal
   const [selectedPromo, setSelectedPromo] = useState<PromocionItem | null>(null);
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedCodeId, setCopiedCodeId] = useState<number | null>(null);
+  const [modalCopiedCode, setModalCopiedCode] = useState(false);
   const [feedbackSuccessMsg, setFeedbackSuccessMsg] = useState<string | null>(null);
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportReason, setReportReason] = useState('Vencida');
 
-  const ALL_PREFERENCES = ['Hamburguesas', 'Combos', 'Postres', 'Café', 'Papas Fritas', 'Bebidas'];
+  const BRAND_OPTIONS = [
+    'Todas',
+    'Betos Lomitos',
+    'PedidosYa',
+    'Rappi',
+    'Lomiterías 2x1',
+    'KFC',
+    "McDonald's",
+    'Burger King',
+    'Mostaza',
+    "Wendy's",
+    'Subway'
+  ];
 
-  const togglePreference = (pref: string) => {
-    if (userPreferences.includes(pref)) {
-      setUserPreferences(userPreferences.filter((p) => p !== pref));
-    } else {
-      if (userPreferences.length < 3) {
-        setUserPreferences([...userPreferences, pref]);
-      }
+  const CATEGORY_OPTIONS: (string | CategoriaPromo)[] = [
+    'Todas',
+    'Lomitos & Sándwiches',
+    'Hamburguesas',
+    'Combos',
+    'Pollo',
+    'Postres & Helados'
+  ];
+
+  const BENEFIT_OPTIONS = ['Todos', '2x1', 'Porcentaje', 'PrecioFinal'];
+
+  const handleCopyCode = async (promoId: number, code: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const ok = await copyToClipboardSafe(code);
+    if (ok) {
+      setCopiedCodeId(promoId);
+      setTimeout(() => setCopiedCodeId(null), 2500);
     }
   };
 
-  const handleCopy = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2500);
-  };
-
-  const handleCanjearDeepLink = (promo: PromocionItem) => {
-    handleCopy(promo.codigoCupon);
-    // Open origin URL in new tab
-    window.open(promo.urlOrigen, '_blank', 'noopener,noreferrer');
+  const handleCopyModalCode = async (code: string) => {
+    const ok = await copyToClipboardSafe(code);
+    if (ok) {
+      setModalCopiedCode(true);
+      setTimeout(() => setModalCopiedCode(false), 2500);
+    }
   };
 
   const handleRatePromo = (promoId: number, isPositive: boolean) => {
@@ -79,7 +221,7 @@ export const MvpLivePreview: React.FC = () => {
           ...p,
           reportesPositivos: newPos,
           reportesNegativos: newNeg,
-          semaforoValidez: newSemaforo,
+          semaforoValidez: newSemaforo
         };
       })
     );
@@ -90,229 +232,277 @@ export const MvpLivePreview: React.FC = () => {
           ? {
               ...prev,
               reportesPositivos: isPositive ? prev.reportesPositivos + 1 : prev.reportesPositivos,
-              reportesNegativos: !isPositive ? prev.reportesNegativos + 1 : prev.reportesNegativos,
+              reportesNegativos: !isPositive ? prev.reportesNegativos + 1 : prev.reportesNegativos
             }
           : null
       );
     }
 
     setFeedbackSuccessMsg(
-      isPositive ? '¡Gracias! Tu voto positivo valida esta oferta para la comunidad.' : 'Gracias. Tu reporte ayuda a alertar a otros usuarios.'
+      isPositive
+        ? '¡Gracias! Tu confirmación valida este cupón online para la comunidad.'
+        : 'Reporte registrado. Revisaremos la vigencia de este cupón online.'
     );
     setTimeout(() => setFeedbackSuccessMsg(null), 3000);
   };
 
-  const handleSendReport = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPromo) return;
-    handleRatePromo(selectedPromo.id, false);
-    setReportModalOpen(false);
-    setFeedbackSuccessMsg('Reporte enviado correctamente. El equipo revisará esta oferta.');
-    setTimeout(() => setFeedbackSuccessMsg(null), 3500);
-  };
-
-  // Filter & Prioritization Engine
-  const filteredAndSortedPromos = promos
-    .filter((p) => {
-      if (selectedBrand !== 'Todas' && p.marcaNombre !== selectedBrand) return false;
-      if (onlyNoApp && p.requiereApp) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return (
-          p.titulo.toLowerCase().includes(q) ||
-          p.descripcion.toLowerCase().includes(q) ||
-          p.marcaNombre.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      // Prioritize by user preferences first
-      const aMatches = userPreferences.includes(a.categoria) || userPreferences.some(pref => a.titulo.includes(pref));
-      const bMatches = userPreferences.includes(b.categoria) || userPreferences.some(pref => b.titulo.includes(pref));
-      if (aMatches && !bMatches) return -1;
-      if (!aMatches && bMatches) return 1;
-
-      // Then by percentage discount
-      return b.porcentajeDescuento - a.porcentajeDescuento;
-    });
+  // Filter promos
+  const filteredPromos = promos.filter((p) => {
+    if (selectedBrand !== 'Todas' && p.marcaNombre !== selectedBrand) {
+      return false;
+    }
+    if (selectedCategory !== 'Todas' && p.categoria !== selectedCategory) {
+      return false;
+    }
+    if (selectedBenefit !== 'Todos' && p.tipoBeneficio !== selectedBenefit) {
+      return false;
+    }
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const matchText =
+        p.titulo.toLowerCase().includes(q) ||
+        p.descripcion.toLowerCase().includes(q) ||
+        p.marcaNombre.toLowerCase().includes(q) ||
+        p.categoria.toLowerCase().includes(q) ||
+        p.seccionNombre.toLowerCase().includes(q) ||
+        (p.codigoCupon && p.codigoCupon.toLowerCase().includes(q)) ||
+        p.condiciones.mediosDePago.toLowerCase().includes(q);
+      if (!matchText) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
-      {/* Top Banner explaining the live preview */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-indigo-950/60 border border-emerald-500/30 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
-            <Zap className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
-                Vista Previa en Vivo
-              </span>
-              <span className="text-xs text-slate-400">
-                Frontend React del MVP (McDonald's, Burger King, Mostaza)
-              </span>
-            </div>
-            <h2 className="text-lg font-bold text-white mt-0.5">
-              Centralizador Inteligente de Descuentos
-            </h2>
-            <p className="text-xs text-slate-300 max-w-xl">
-              Esta es la interfaz de usuario interactiva del Módulo Cliente. Podés buscar ofertas, filtrar marcas, personalizar gustos, canjear cupones y probar el bucle de retroalimentación.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setIsPrefModalOpen(true)}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 flex items-center gap-2 shrink-0"
-        >
-          <Sliders className="w-4 h-4" />
-          <span>Tus Preferencias ({userPreferences.length}/3)</span>
-        </button>
-      </div>
-
-      {/* User Preferences active chip bar */}
-      <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 flex items-center gap-1 font-medium">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Priorizando por tus gustos:</span>
-          </span>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {userPreferences.map((pref) => (
-              <span
-                key={pref}
-                className="px-2.5 py-1 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 font-semibold text-[11px] flex items-center gap-1"
-              >
-                <span>#{pref}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={() => setIsPrefModalOpen(true)}
-          className="text-xs text-indigo-400 hover:text-indigo-300 font-medium underline"
-        >
-          Cambiar preferencias
-        </button>
-      </div>
-
-      {/* Filters & Brand Selector Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Brand Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-            {['Todas', "McDonald's", 'Burger King', 'Mostaza'].map((b) => (
-              <button
-                key={b}
-                onClick={() => setSelectedBrand(b)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  selectedBrand === b
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {b}
-              </button>
-            ))}
-          </div>
-
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por hamburguesa, postre, combo, papas..."
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Toggle No App */}
-          <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none px-2">
-            <input
-              type="checkbox"
-              checked={onlyNoApp}
-              onChange={(e) => setOnlyNoApp(e.target.checked)}
-              className="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0"
-            />
-            <span className="flex items-center gap-1">
-              <Smartphone className="w-3.5 h-3.5 text-slate-400" />
-              <span>Sin necesidad de App</span>
-            </span>
-          </label>
-        </div>
-      </div>
-
-      {/* Feedback Toast Notification */}
+      {/* Toast Notification */}
       {feedbackSuccessMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2 shadow-lg animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-xs shadow-2xl flex items-center gap-2 border border-emerald-400 animate-in slide-in-from-bottom duration-200">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{feedbackSuccessMsg}</span>
         </div>
       )}
 
-      {/* Grid of Discounts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredAndSortedPromos.map((promo) => {
-          const isPreferred = userPreferences.includes(promo.categoria) || userPreferences.some(p => promo.titulo.includes(p));
+      {/* Main App Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/30 p-6 sm:p-8 shadow-2xl">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          const semaforoBg =
-            promo.semaforoValidez === 'Verde'
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-              : promo.semaforoValidez === 'Amarillo'
-              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-              : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>100% Exclusivo Compras Online & Delivery en Argentina</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+              <span>Cazador de Descuentos</span>
+              <span className="text-2xl">🏷️</span>
+            </h1>
+
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Encontrá ofertas reales, 2x1 en lomitos y cupones verificados para comprar online en{' '}
+              <strong className="text-white">Betos Lomitos</strong>,{' '}
+              <strong className="text-white">PedidosYa</strong>,{' '}
+              <strong className="text-white">Rappi</strong>,{' '}
+              <strong className="text-white">KFC</strong>,{' '}
+              <strong className="text-white">Mostaza</strong>,{' '}
+              <strong className="text-white">Burger King</strong> y más. Sin simuladores presenciales ni demoras: con todas las condiciones y precios detallados.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <div className="px-4 py-3 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
+              <span className="text-2xl font-black text-emerald-400 block">
+                {promos.length}
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                Ofertas Online Activas
+              </span>
+            </div>
+
+            <div className="px-4 py-3 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
+              <span className="text-2xl font-black text-indigo-400 block">
+                Hasta 50%
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                Ahorro en 2x1 y Combos
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mt-6 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por lomito 2x1, Betos, PedidosYa, hamburguesa, cupón o comida..."
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Brand Filters Carousel */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+          <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+            <ShoppingCart className="w-3.5 h-3.5 text-indigo-400" />
+            Filtrar por Tienda o Plataforma Online:
+          </span>
+          <span>{filteredPromos.length} ofertas encontradas</span>
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {BRAND_OPTIONS.map((brand) => {
+            const isSelected = selectedBrand === brand;
+            return (
+              <button
+                key={brand}
+                onClick={() => setSelectedBrand(brand)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400'
+                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                {brand === 'Todas' ? (
+                  <span>Todas las Tiendas</span>
+                ) : (
+                  <>
+                    <span>{brand}</span>
+                    {brand.includes('2x1') && (
+                      <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] rounded font-black">
+                        HOT
+                      </span>
+                    )}
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Secondary Category Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-slate-400 font-medium mr-1 flex items-center gap-1">
+          <Layers className="w-3 h-3 text-slate-500" />
+          Categoría:
+        </span>
+        {CATEGORY_OPTIONS.map((cat) => {
+          const isSelected = selectedCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                isSelected
+                  ? 'bg-slate-200 text-slate-900 font-bold'
+                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
+
+        <div className="h-4 w-[1px] bg-slate-800 mx-1 hidden sm:block" />
+
+        <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:flex items-center gap-1">
+          <Tag className="w-3 h-3 text-slate-500" />
+          Beneficio:
+        </span>
+        {BENEFIT_OPTIONS.map((ben) => {
+          const isSelected = selectedBenefit === ben;
+          return (
+            <button
+              key={ben}
+              onClick={() => setSelectedBenefit(ben)}
+              className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                isSelected
+                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/50 font-bold'
+                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              {ben === 'Todos' ? 'Todos los beneficios' : ben}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Empty State */}
+      {filteredPromos.length === 0 && (
+        <div className="p-12 text-center rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
+          <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto" />
+          <h3 className="text-base font-bold text-white">No se encontraron ofertas con estos filtros</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Probá quitando el término de búsqueda o seleccionando "Todas las Tiendas".
+          </p>
+          <button
+            onClick={() => {
+              setSelectedBrand('Todas');
+              setSelectedCategory('Todas');
+              setSelectedBenefit('Todos');
+              setSearchQuery('');
+            }}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold"
+          >
+            Restablecer Filtros
+          </button>
+        </div>
+      )}
+
+      {/* Grid of Online Deal Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredPromos.map((promo) => {
+          const hasMultiplePrices = Boolean(promo.variantesPrecios && promo.variantesPrecios.length > 1);
 
           return (
             <div
               key={promo.id}
-              className={`rounded-2xl border transition-all overflow-hidden flex flex-col justify-between group ${
-                isPreferred
-                  ? 'bg-slate-900 border-indigo-500/40 shadow-lg shadow-indigo-500/5'
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
-              }`}
+              onClick={() => setSelectedPromo(promo)}
+              className="group cursor-pointer rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 shadow-xl transition-all hover:-translate-y-1 hover:shadow-indigo-500/10 flex flex-col justify-between overflow-hidden"
             >
               <div className="p-5 space-y-3.5">
-                {/* Header: Brand & Discount Tag */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={promo.marcaLogo}
-                      alt={promo.marcaNombre}
-                      className="w-7 h-7 object-contain"
-                    />
-                    <div>
-                      <span className="font-bold text-white text-xs block">
+                {/* Brand & Badge Top Bar */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <BrandLogo marca={promo.marcaNombre} logoUrl={promo.marcaLogo} size="w-8 h-8" />
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold text-white block truncate">
                         {promo.marcaNombre}
                       </span>
-                      <span className="text-[11px] text-slate-400">{promo.categoria}</span>
+                      <span className="text-[10px] text-slate-400 block truncate">
+                        {promo.nombrePlataforma}
+                      </span>
                     </div>
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 font-extrabold text-xs border border-rose-500/30">
+                  {/* Benefit Pill */}
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold shrink-0 border ${promo.marcaBgBadge}`}>
                     {promo.tipoBeneficio === '2x1'
-                      ? '2x1'
-                      : promo.tipoBeneficio === 'ProductoGratis'
-                      ? '¡GRATIS!'
-                      : `-${promo.porcentajeDescuento}%`}
+                      ? '2x1 ONLINE'
+                      : promo.tipoBeneficio === 'Porcentaje'
+                      ? `${promo.porcentajeDescuento}% OFF`
+                      : 'PRECIO ESPECIAL'}
                   </span>
                 </div>
 
-                {/* Preference Tag if matches */}
-                {isPreferred && (
-                  <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-full">
-                    <Sparkles className="w-3 h-3 text-amber-400" />
-                    <span>Coincide con tu preferencia por #{promo.categoria}</span>
-                  </div>
-                )}
-
-                {/* Title & Description */}
+                {/* Offer Title & Description */}
                 <div>
-                  <h3 className="font-bold text-sm text-slate-100 group-hover:text-indigo-300 transition-colors">
+                  <h3 className="font-bold text-sm text-slate-100 group-hover:text-indigo-300 transition-colors leading-snug">
                     {promo.titulo}
                   </h3>
                   <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">
@@ -321,79 +511,135 @@ export const MvpLivePreview: React.FC = () => {
                 </div>
 
                 {/* Price Display */}
-                <div className="flex items-baseline gap-2 pt-1">
-                  <span className="text-xl font-black text-emerald-400">
-                    {promo.precioPromocional === 0 ? 'GRATIS' : `$${promo.precioPromocional.toLocaleString('es-AR')}`}
-                  </span>
-                  {promo.precioOriginal > 0 && (
-                    <span className="text-xs text-slate-500 line-through">
-                      ${promo.precioOriginal.toLocaleString('es-AR')}
+                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-black text-emerald-400">
+                        ${promo.precioPromocional.toLocaleString('es-AR')}
+                      </span>
+                      {promo.precioOriginal > 0 && (
+                        <span className="text-xs text-slate-500 line-through">
+                          ${promo.precioOriginal.toLocaleString('es-AR')}
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="text-[11px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                      Ahorrás ${(promo.precioOriginal - promo.precioPromocional).toLocaleString('es-AR')}
                     </span>
+                  </div>
+
+                  {hasMultiplePrices && (
+                    <div className="text-[10px] text-indigo-300 font-medium flex items-center gap-1 pt-1 border-t border-slate-900">
+                      <Tag className="w-3 h-3" />
+                      <span>{promo.variantesPrecios?.length} precios según delivery / take away</span>
+                    </div>
                   )}
                 </div>
 
-                {/* Technical status & Requirements */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
-                  <span className={`px-2 py-0.5 rounded-full border font-medium flex items-center gap-1 ${semaforoBg}`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                    <span>{promo.semaforoValidez === 'Verde' ? 'Verificado' : promo.semaforoValidez === 'Amarillo' ? 'En revisión' : 'Reportado'}</span>
-                  </span>
-
-                  {promo.requiereApp ? (
-                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
-                      <Smartphone className="w-3 h-3 text-slate-400" />
-                      <span>Requiere App</span>
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
-                      Sin App
-                    </span>
-                  )}
-
-                  <span className="text-slate-500 flex items-center gap-1 text-[10px]">
-                    <Clock className="w-2.5 h-2.5" />
-                    {promo.fechaUltimaVerificacion}
-                  </span>
+                {/* Conditions Summary */}
+                <div className="space-y-1 text-[11px] text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Truck className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span className="truncate">{promo.condiciones.modalidad}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <CreditCard className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">{promo.condiciones.mediosDePago}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="truncate">{promo.condiciones.diasValidos}</span>
+                  </div>
                 </div>
+
+                {/* Code Box or Direct Cart Banner */}
+                {promo.requiereCodigo && promo.codigoCupon ? (
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-indigo-950/40 border border-indigo-500/30 gap-2">
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">
+                        Código Necesario:
+                      </span>
+                      <span className="font-mono text-xs font-black text-indigo-300 tracking-wider">
+                        {promo.codigoCupon}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyCode(promo.id, promo.codigoCupon!, e)}
+                      className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm transition-colors shrink-0"
+                      title="Copiar cupón"
+                    >
+                      {copiedCodeId === promo.id ? (
+                        <>
+                          <CheckCheck className="w-3.5 h-3.5 text-emerald-300" />
+                          <span className="text-emerald-300">Copiado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copiar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-[11px] font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    <span>Aplica directo en carrito (Sin código manual)</span>
+                  </div>
+                )}
               </div>
 
-              {/* Card Footer: Action button */}
-              <div className="p-4 bg-slate-950/60 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1 text-xs text-slate-400">
-                  <span className="text-[11px] font-mono bg-slate-800 px-2 py-0.5 rounded text-indigo-300">
-                    {promo.codigoCupon}
-                  </span>
-                </div>
-
+              {/* Card Footer: Action Buttons */}
+              <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between gap-2">
                 <button
-                  onClick={() => setSelectedPromo(promo)}
-                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition-all"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPromo(promo);
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1"
                 >
-                  <span>Ver Ficha y Canje</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Ver Condiciones</span>
                 </button>
+
+                <a
+                  href={promo.urlTiendaOnline}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all hover:scale-105"
+                  title="Abrir tienda para comprar online"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span>Comprar Online</span>
+                  <ExternalLink className="w-3 h-3 ml-0.5" />
+                </a>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Modal: Ficha Detallada del Descuento y Canje Rápido */}
+      {/* Modal: Full Conditions & Multi-price details for Online Shopping */}
       {selectedPromo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Header */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Modal Header */}
             <div className="flex items-start justify-between px-6 py-4 border-b border-slate-800 bg-slate-800/40">
               <div className="flex items-center gap-3">
-                <img
-                  src={selectedPromo.marcaLogo}
-                  alt={selectedPromo.marcaNombre}
-                  className="w-9 h-9 object-contain"
-                />
+                <BrandLogo marca={selectedPromo.marcaNombre} logoUrl={selectedPromo.marcaLogo} size="w-10 h-10" />
                 <div>
-                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
-                    {selectedPromo.marcaNombre}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                      {selectedPromo.marcaNombre}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                      {selectedPromo.condiciones.modalidad}
+                    </span>
+                  </div>
                   <h3 className="text-base font-bold text-white leading-tight">
                     {selectedPromo.titulo}
                   </h3>
@@ -401,7 +647,8 @@ export const MvpLivePreview: React.FC = () => {
               </div>
               <button
                 onClick={() => setSelectedPromo(null)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                title="Cerrar"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -409,251 +656,247 @@ export const MvpLivePreview: React.FC = () => {
 
             {/* Modal Body */}
             <div className="p-6 space-y-5 overflow-y-auto text-xs text-slate-300">
-              {/* Price Banner */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-[11px] block">Precio Promocional Final</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-emerald-400">
-                      {selectedPromo.precioPromocional === 0
-                        ? 'GRATIS'
-                        : `$${selectedPromo.precioPromocional.toLocaleString('es-AR')}`}
+              {/* Top Action Banner: Direct Online Purchase */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/60 to-indigo-950/60 border border-emerald-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+                <div className="space-y-1">
+                  <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                    <Compass className="w-4 h-4 text-emerald-400" />
+                    <span>Tienda / Plataforma de Compra Online:</span>
+                  </span>
+                  <p className="text-sm text-white font-bold">
+                    {selectedPromo.nombrePlataforma}
+                  </p>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {selectedPromo.urlTiendaOnline}
+                  </p>
+                </div>
+
+                <a
+                  href={selectedPromo.urlTiendaOnline}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-emerald-500/30 flex items-center gap-2 shrink-0 transition-transform hover:scale-105"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  <span>Ir a Comprar Online</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
+              {/* Coupon Code Section */}
+              {selectedPromo.requiereCodigo && selectedPromo.codigoCupon ? (
+                <div className="p-4 rounded-xl bg-indigo-950/50 border border-indigo-500/40 space-y-2">
+                  <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                    <Tag className="w-4 h-4 text-indigo-400" />
+                    <span>Código de Descuento para el Checkout:</span>
+                  </span>
+                  <div className="flex items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span className="font-mono text-base font-black text-amber-300 tracking-wider">
+                      {selectedPromo.codigoCupon}
                     </span>
-                    <span className="text-xs text-slate-500 line-through">
-                      ${selectedPromo.precioOriginal.toLocaleString('es-AR')}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyModalCode(selectedPromo.codigoCupon!)}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+                    >
+                      {modalCopiedCode ? (
+                        <>
+                          <CheckCheck className="w-4 h-4 text-emerald-300" />
+                          <span>¡Código Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Copiar Código</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Pegá este código en el campo "¿Tenés un cupón o descuento?" antes de pagar en la tienda.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs font-medium flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    <strong>Descuento Automático:</strong> Esta oferta no requiere código. Se descuenta automáticamente en el carrito de compras al seleccionar los productos de la promo.
+                  </span>
+                </div>
+              )}
+
+              {/* Different Prices Table (Distintos Precios si los hubiera) */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-indigo-400" />
+                  <span>Precios y Opciones Disponibles:</span>
+                </h4>
+
+                {selectedPromo.variantesPrecios && selectedPromo.variantesPrecios.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedPromo.variantesPrecios.map((v, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
+                      >
+                        <div>
+                          <span className="text-white font-semibold block text-xs">
+                            {v.nombre}
+                          </span>
+                          {v.detalle && (
+                            <span className="text-[11px] text-slate-400 block mt-0.5">
+                              {v.detalle}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-sm font-black text-emerald-400 block">
+                            ${v.precio.toLocaleString('es-AR')}
+                          </span>
+                          {v.precioOriginal && (
+                            <span className="text-[11px] text-slate-500 line-through block">
+                              ${v.precioOriginal.toLocaleString('es-AR')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">Precio Promocional Único</span>
+                      <span className="text-base font-black text-emerald-400">
+                        ${selectedPromo.precioPromocional.toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-400 text-[11px] block">Precio Regular</span>
+                      <span className="text-xs text-slate-500 line-through">
+                        ${selectedPromo.precioOriginal.toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* All Purchase Conditions (Todas las Condiciones) */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Condiciones de la Oferta Online:</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-400 block font-medium">Compra Mínima:</span>
+                    <span className="text-white font-bold">{selectedPromo.condiciones.compraMinima}</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-400 block font-medium">Días y Horarios:</span>
+                    <span className="text-white font-bold">{selectedPromo.condiciones.diasValidos}</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-400 block font-medium">Medios de Pago Online:</span>
+                    <span className="text-white font-bold">{selectedPromo.condiciones.mediosDePago}</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-400 block font-medium">Zonas de Alcance:</span>
+                    <span className="text-white font-bold">{selectedPromo.condiciones.alcanceZona}</span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 font-extrabold text-sm border border-rose-500/30">
-                    Ahorro del {selectedPromo.porcentajeDescuento}%
-                  </span>
-                </div>
+                {selectedPromo.condiciones.limitePorUsuario && (
+                  <p className="text-[11px] text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                    ⚠️ {selectedPromo.condiciones.limitePorUsuario}
+                  </p>
+                )}
+
+                {/* Additional Terms */}
+                {selectedPromo.terminosYCondiciones.length > 0 && (
+                  <div className="pt-2 border-t border-slate-800 space-y-1">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">
+                      Términos adicionales:
+                    </span>
+                    <ul className="list-disc list-inside space-y-0.5 text-slate-400 text-[11px]">
+                      {selectedPromo.terminosYCondiciones.map((term, i) => (
+                        <li key={i}>{term}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
-              {/* Description & Vigencia */}
-              <div className="space-y-1">
-                <h4 className="font-bold text-white text-xs">Descripción de la Promoción:</h4>
-                <p className="text-slate-300 leading-relaxed">{selectedPromo.descripcion}</p>
-                <p className="text-[11px] text-slate-400 pt-1">
-                  📅 Vigencia válida hasta: <strong className="text-slate-200">{selectedPromo.vigenciaHasta}</strong>
-                </p>
-              </div>
-
-              {/* Letra chica / Restricciones estructuradas */}
-              <div className="space-y-2">
+              {/* Step by Step Online Purchase Guide */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
                 <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                  <Info className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Condiciones y Letra Chica:</span>
+                  <Compass className="w-4 h-4 text-indigo-400" />
+                  <span>Pasos para Comprar Online con este Descuento:</span>
                 </h4>
                 <div className="space-y-1.5">
-                  {selectedPromo.restricciones.map((r, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 text-[11px] text-slate-300 flex items-start gap-2"
-                    >
-                      <span className="text-indigo-400 font-bold">•</span>
-                      <span>{r}</span>
+                  {selectedPromo.pasosCompraOnline.map((paso, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-[11px] text-slate-300">
+                      <span className="w-4 h-4 rounded-full bg-indigo-600/30 text-indigo-300 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <span>{paso}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Requirement Alert if requires app */}
-              {selectedPromo.requiereApp && (
-                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2.5">
-                  <Smartphone className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>
-                    <strong>Atención:</strong> Esta oferta exige tener instalada la App oficial de {selectedPromo.marcaNombre}.
-                  </span>
-                </div>
-              )}
-
-              {/* Coupon Box & Action Canje */}
-              <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-indigo-200 font-semibold">Código de Cupón:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold bg-slate-900 px-3 py-1 rounded-lg text-emerald-300 border border-slate-700">
-                      {selectedPromo.codigoCupon}
-                    </span>
-                    <button
-                      onClick={() => handleCopy(selectedPromo.codigoCupon)}
-                      className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs"
-                      title="Copiar código"
-                    >
-                      {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleCanjearDeepLink(selectedPromo)}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Copiar Cupón y Abrir en {selectedPromo.marcaNombre} (Canje en 1 Toque)</span>
-                </button>
-              </div>
-
-              {/* Bucle de Retroalimentación Inmediata (Feedback Loop) */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
-                <span className="text-xs font-semibold text-white block">
-                  Bucle de Retroalimentación de la Comunidad:
-                </span>
-                <p className="text-[11px] text-slate-400">
-                  ¿Probaste este cupón? Calificá para ajustar el semáforo de validez pública.
-                </p>
-
-                <div className="flex items-center justify-between gap-3 pt-1">
-                  <div className="flex items-center gap-2">
+              {/* Community Rating */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px]">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">¿Te sirvió esta oferta?</span>
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleRatePromo(selectedPromo.id, true)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 transition-colors"
+                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-emerald-400 rounded-lg border border-slate-800 flex items-center gap-1"
                     >
                       <ThumbsUp className="w-3.5 h-3.5" />
-                      <span>Me funcionó ({selectedPromo.reportesPositivos})</span>
+                      <span>Funciona ({selectedPromo.reportesPositivos})</span>
                     </button>
                     <button
                       onClick={() => handleRatePromo(selectedPromo.id, false)}
-                      className="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 flex items-center gap-1.5 transition-colors"
+                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-rose-400 rounded-lg border border-slate-800 flex items-center gap-1"
                     >
                       <ThumbsDown className="w-3.5 h-3.5" />
-                      <span>No me funcionó ({selectedPromo.reportesNegativos})</span>
+                      <span>Falló ({selectedPromo.reportesNegativos})</span>
                     </button>
                   </div>
-
-                  <button
-                    onClick={() => setReportModalOpen(true)}
-                    className="text-[11px] text-slate-400 hover:text-rose-400 flex items-center gap-1"
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>Reportar problema</span>
-                  </button>
                 </div>
+
+                <span className="text-slate-500 text-[10px]">
+                  Vigencia: {selectedPromo.vigenciaHasta}
+                </span>
               </div>
+            </div>
+
+            {/* Modal Bottom CTA */}
+            <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-950 flex items-center justify-between gap-3">
+              <button
+                onClick={() => setSelectedPromo(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold"
+              >
+                Cerrar
+              </button>
+
+              <a
+                href={selectedPromo.urlTiendaOnline}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-emerald-500/30 flex items-center gap-2"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span>Ir a Comprar en {selectedPromo.nombrePlataforma}</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Modal: Preferencias del Usuario */}
-      {isPrefModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-indigo-400" />
-                <span>Captura Ágil de Preferencias</span>
-              </h3>
-              <button
-                onClick={() => setIsPrefModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-400">
-              Elegí hasta <strong>3 categorías</strong> favoritas para que el catálogo ordene y priorice automáticamente las ofertas que más te interesan:
-            </p>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              {ALL_PREFERENCES.map((pref) => {
-                const isSelected = userPreferences.includes(pref);
-                return (
-                  <button
-                    key={pref}
-                    type="button"
-                    onClick={() => togglePreference(pref)}
-                    className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
-                      isSelected
-                        ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
-                        : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <span>{pref}</span>
-                    {isSelected && <Check className="w-4 h-4 text-white" />}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="pt-3 border-t border-slate-800 flex justify-end">
-              <button
-                onClick={() => setIsPrefModalOpen(false)}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold"
-              >
-                Guardar y Aplicar al Feed
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Reportar Problema */}
-      {reportModalOpen && selectedPromo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <form
-            onSubmit={handleSendReport}
-            className="relative w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 space-y-4"
-          >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400" />
-                <span>Reportar Oferta Vencida o Errónea</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setReportModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Motivo del reporte:</label>
-                <select
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200"
-                >
-                  <option value="Vencida">El cupón ya expiró o venció</option>
-                  <option value="DatoIncorrecto">El precio o descuento no coincide</option>
-                  <option value="RechazadoEnLocal">No me lo aceptaron en el local</option>
-                  <option value="Otro">Otro problema</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Detalle adicional (opcional):</label>
-                <textarea
-                  rows={3}
-                  placeholder="Ej: Fui a la sucursal de Córdoba Shopping y me dijeron que no aplica..."
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-xs"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setReportModalOpen(false)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold"
-              >
-                Enviar Reporte
-              </button>
-            </div>
-          </form>
         </div>
       )}
     </div>
